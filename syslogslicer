@@ -1,0 +1,138 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use DateTime;
+use File::Basename;
+use Getopt::Long;
+
+# TODO - doesn't deal with 'last message repeated X times'
+# TODO - convert dates to epoch and compare those - might be faster
+
+my $app = basename($0);
+my ( $start, $end, $datecheck );
+
+GetOptions (
+  "p|prog|program=s"    => \( my $program ),
+  "m|msg|message=s"     => \( my $message ),
+  "f|fields|format=s"   => \( my $fields = 'month,date,time,hostname,program,message'),
+  "s|start|starttime=s" => \( my $startdate ),
+  "e|end|endtime=s"     => \( my $enddate ),
+  "h|help"              => \&usage,
+);
+
+my %months = ( Jan => '01', Feb => '02', Mar => '03',
+               Apr => '04', May => '05', Jun => '06',
+               Jul => '07', Aug => '08', Sep => '09',
+               Oct => '10', Nov => '11', Dec => '12',
+             );
+
+my @fields = split(',', $fields);
+
+
+if ( defined $startdate ) {
+  $datecheck++;
+  die "$app: dates must be 14 digits long\n" unless ($startdate =~ /\d{14}/);
+  $start = make_datetime( $startdate ) if $startdate;
+}
+
+if ( defined $enddate ) {
+  $datecheck++;
+  die "$app: dates must be 14 digits long\n" unless ($enddate =~ /\d{14}/);
+  $end = make_datetime( $enddate ) if $enddate;
+}
+
+if ( defined $startdate && defined $enddate ) {
+  if ( ($enddate < $startdate) or ( $startdate > $enddate) ) {
+    die "$app: $startdate should be before $enddate\n";
+  }
+}
+
+
+
+while(<>) {
+  m/(\w{3}) (\d+) (\d\d):(\d\d):(\d\d) (\S+) (\S+):? (.+)/o;
+
+  my %logline = ( month    => $1, date    => $2, time    => "$3:$4:$5",
+                  hostname => $6, program => $7, message => $8
+                );
+
+  if ( $program ) { next unless $logline{program} =~ /$program/i; }
+  if ( $message ) { next unless $logline{message} =~ /$message/i; }
+
+  if ( $datecheck ) {
+    my $year = (localtime)[5];
+    $year += 1900;
+
+    my $logdate = make_datetime( "$year$months{$1}$2$3$4$5" );
+
+    if ( $start ) { next if ( $logdate < $start ) }
+    if ( $end   ) { next if ( $logdate > $end   ) }
+  }
+
+  print "@logline{@fields}\n";
+}
+
+#################################################
+
+sub make_datetime {
+  my $datestamp = shift;
+
+  $datestamp =~ /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/;
+
+  # print "$1-$2-$3-$4-$5-$6\n";
+  my $dt = DateTime->new( year => $1, month  => $2, day    => $3,
+                          hour => $4, minute => $5, second => $6,
+                        );
+
+  return $dt;
+}
+
+#################################################
+
+sub usage {
+
+  print<<EOU;
+
+$app - Copyright (c) 2008 Dean Wilson. Licensed under the GPL
+
+Simple syslog filter for semi-structured queries of the log file.
+
+Usage Examples:
+ $app -p cron -f program,message /var/log/syslog
+    # print the program and message for all lines with program 'cron'
+
+ $app -p cron -m hourly /var/log/syslog
+    # all fields for all lines with program 'cron' and message 'hourly'
+
+ $app -p cron -m hourly -s 20080810100000 -e 20080810123000 /var/log/syslog
+    # all fields for all lines with program 'cron' and message 'hourly'
+    # between 20080810100000 and 20080810123000
+
+ $app -h    # shows this information
+
+Options:
+  -p | --program
+    Filter log lines to only include this program
+  -m | --msg
+    Only print lines with the given value in the message
+  -s | --starttime
+    Include log lines that originate after this.
+  -e | --endtime
+    Include log lines that originate before this.
+  -h
+    This help and usage information
+
+Notes:
+  This script doesn't deal with 'message repeated' lines.
+
+  You can specify exact ranges using both '-s' and '-e'
+
+  Dates should be specified as YYYYMMDDHHMMSS
+
+Supported Fields:
+  month date time hostname program message
+
+EOU
+  exit 3;
+
+}
