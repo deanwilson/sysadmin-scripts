@@ -10,6 +10,7 @@ my $netstat = '/bin/netstat -nltu';
 GetOptions(
   "s|state|statefile=s" => \( my $state = '/tmp/lpdiff.state'),
   "u|update"            => \( my $update ),
+  "h|help"              => \&usage,
 );
 
 my $app = basename($0);
@@ -78,3 +79,37 @@ if ( scalar @subtractions ){
   print "Expected but absent: \n";
   print join("\n", @subtractions), "\n";
 }
+
+##############################################
+
+sub usage {
+
+  print<<EOU;
+
+lpdiff can be used to capture the currently running ports and then provide
+a list of differences on future runs. It shows both new ports and old ones
+thaqt have closed since its previous run.
+
+$app - Copyright (c) 2008 Dean Wilson. Licensed under the GPL
+
+Usage Examples:
+
+ $app # prints a list of ports changed from the last time update was run
+
+ $app --update # write the currently listening set of ports to the
+               # state file
+
+ $app -h    # shows this information
+
+Options:
+  -s | --statefile
+    The state file to use for tracking open ports.
+  -u | --update
+    Update the state file. This sets the baseline for fitire runs.
+  -h
+    This help and usage information.
+
+EOU
+  exit 3;
+}
+
