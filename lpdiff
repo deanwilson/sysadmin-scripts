@@ -1,0 +1,80 @@
+#!/usr/bin/perl -w
+use strict;
+use warnings;
+use File::Basename;
+use Getopt::Long;
+
+# netstat command to list listening ip:port combinations
+my $netstat = '/bin/netstat -nltu';
+
+GetOptions(
+  "s|state|statefile=s" => \( my $state = '/tmp/lpdiff.state'),
+  "u|update"            => \( my $update ),
+);
+
+my $app = basename($0);
+
+##############################################
+
+open( my $ns_fh, "$netstat |" )
+  || die "Failed to use [$netstat]: $!\n";
+
+my @listeners;
+while(<$ns_fh>) {
+  my $local = ( split(/\s+/) )[3];
+  next unless $local =~ /:/;
+  push (@listeners, $local);
+}
+
+close $ns_fh;
+
+# load state
+##############################################
+
+my @previous;
+if ( -e $state ) {
+  open ( my $state_fh, '<', $state )
+    || die "Failed to open [$state]: $!\n";
+
+  chomp (@previous = <$state_fh>);
+
+  close $state_fh;
+}
+
+# write state if --update is given
+##############################################
+
+if ( $update ) {
+  open ( my $state_fh, '>', $state )
+    || die "Failed to open [$state]: $!\n";
+
+  print "$app: updating expected ip/ports\n";
+  print $state_fh join( "\n", @listeners );
+
+  close $state_fh;
+  exit 0;
+}
+
+# compare and print diffs
+##############################################
+
+my %current_listeners  = map { $_ => 1 } @listeners;
+my %previous_listeners = map { $_ => 1 } @previous;
+
+my (@additions, @subtractions);
+for my $listener (keys %current_listeners) {
+  push( @additions, $listener ) unless exists $previous_listeners{$listener};
+}
+for my $listener (keys %previous_listeners) {
+  push( @subtractions, $listener ) unless exists $current_listeners{$listener};
+}
+
+if ( scalar @additions ){
+  print "New listeners: \n";
+  print join("\n", @additions), "\n";
+}
+
+if ( scalar @subtractions ){
+  print "Expected but absent: \n";
+  print join("\n", @subtractions), "\n";
+}

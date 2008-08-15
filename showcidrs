@@ -1,0 +1,59 @@
+#!/usr/bin/perl -w
+use strict;
+use warnings;
+use File::Basename;
+use Getopt::Long;
+use Net::IPv4Addr   qw ( :all );
+use Regexp::Common  qw ( net );
+use Term::ANSIColor qw ( :constants );
+
+# highlight any IPs found that are in the given cidr range.
+# written to help locate internal traffic in logs.
+
+GetOptions(
+  "c|color|colour" => \( my $coloured = 0 ),
+  "h|help"         => \&usage,
+);
+
+my $cidr_range = shift || usage();
+
+while ( <> ) {
+  s/\b$RE{net}{IPv4}{-keep}\b/check_network($1)/eg;
+  print;
+}
+
+#-----------------------------------------#
+
+sub check_network {
+  my $ip = shift;
+  my $matched;
+
+  if ( ipv4_in_network( $cidr_range, $ip ) ) {
+    $matched = $coloured ? GREEN . $ip . RESET : " !!$ip!! ";
+  } else {
+    $matched = $coloured ? RED   . $ip . RESET : " --$ip-- ";
+  }
+  return $matched;
+}
+
+#-----------------------------------------#
+
+sub usage {
+  my $appname = basename($0);
+
+print<<EOH;
+  $appname: <cidrrange> [-c] [filename]
+
+  -c\tTurn on coloured output.
+
+  showcidrs -c 60.11.55.0/24 /var/log/syslog
+
+This script can either be passed a filename or be invoked in a pipe, in
+which case it operated on STDIN.
+
+EOH
+
+  exit 0;
+}
+
+#-----------------------------------------#
