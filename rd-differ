@@ -1,0 +1,27 @@
+#!/bin/bash
+
+APPNAME=$(basename $0)
+
+# ugly but works
+target=$1
+shift
+basehost=$1
+shift
+
+BASEFILES=$(mktemp -d /home/dwilson/rd-differ/$APPNAME.XXXXXX)
+
+# grab a copy of each set of files we want from each host listed
+for host in $basehost $*
+do
+  mkdir $BASEFILES/$host
+  rsync -a -L $host:$target $BASEFILES/$host
+done
+
+# diff each host against the baseline host and show oddness.
+for host in $*
+do
+  ( cd $BASEFILES ; diff -ur $basehost $host )
+done
+
+# clean up
+rm -rf $BASEFILES
