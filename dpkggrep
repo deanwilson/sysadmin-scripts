@@ -1,0 +1,16 @@
+#!/bin/bash
+# dpkggrep 'apache*' DocumentRoot
+# does lots of execs of grep - bad form
+
+pkgglob=$1
+searchstring=$2
+
+for package in $(dpkg -l "$pkgglob" | awk '/^ii/ { print $2 }')
+do
+  for file in $(dpkg -L $package)
+  do
+    if [ -f "$file"  ];then
+      grep -H $searchstring $file
+    fi
+  done
+done

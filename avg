@@ -1,0 +1,20 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+
+my ($values, $total_value, $max) = (0,0,0);
+my $min  = 1e10;
+
+while ( <> ) {
+  chomp( my $number = $_);
+
+  $values++;
+  $total_value += $number;
+
+  $min = $number if $min > $number;
+  $max = $number if $max < $number;
+}
+
+my $avg = int ( $total_value / $values );
+
+print "average [$avg] min [$min] - max [$max]\n";
