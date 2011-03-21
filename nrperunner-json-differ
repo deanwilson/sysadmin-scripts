@@ -1,0 +1,25 @@
+#!/usr/bin/ruby
+require 'rubygems'
+require 'json'
+require 'pp'
+
+diff = { }
+changed = [ ]
+
+prefile  = JSON.load File.open(ARGV.shift).read
+postfile = JSON.load File.open(ARGV.shift).read
+
+prefile.each_key do |check|
+
+  if prefile[check]['returncode'] == postfile[check]['returncode']
+    prefile.delete(check)
+    postfile.delete(check)
+  else
+    pre_ret  = prefile[check]['returncode']
+    post_ret = postfile[check]['returncode']
+
+    changed << "#{check} changed from #{pre_ret} to #{ post_ret }"
+  end
+end
+
+puts changed
