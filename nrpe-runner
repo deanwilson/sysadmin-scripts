@@ -12,7 +12,7 @@ options = {
 OptionParser.new do |opts|
   opts.on("-a", "--all")                   { |v| options['all'] = v }
   opts.on("-c", "--command COMMAND")       { |command|  options['command'] = command }
-  opts.on("-d", "--directory")             { |v| options['basedir'] = v }
+  opts.on("-d", "--directory DIR")         { |dir| options['basedir'] = dir }
   opts.on("-j", "--json")                  { |v| options['json'] = v }
   opts.on("-n", "--name NAME")             { |name| options['name'] = name }
   opts.on("-o", "--output-file FILENAME")  { |filename| options['output'] = filename }
