@@ -7,6 +7,7 @@ my $distro = "maverick";
 my $pkg_url = "http://packages.ubuntu.com/$distro";
 
 print qq!<data date-time-format="iso8601">\n!;
+
 while(<>) { 
   my ($package, $action, $colour);
 
@@ -27,7 +28,6 @@ while(<>) {
 
   next unless defined $action;
 
- # my $url = qq!<a href="$pkg_url/$package">$distro/$package</a>!;
   my $url = qq!&lt;a href="$pkg_url/$package"&gt;$distro/$package&lt;/a&gt;!;
 
   print qq!  <event start='$date' title='$action: $package' color='$colour'>$url</event>\n!;
