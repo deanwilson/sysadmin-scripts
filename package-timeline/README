@@ -1,0 +1,12 @@
+Very quick demo that puts Ubuntu package events (install, remove, update)
+on an MIT simile timeline
+
+Run the script:
+cat /var/log/dpkg.log | perl generate-package-events > $weblocation/packages.xml
+Visit http://$web/packages.html
+
+Notes
+ * only works on Ubuntu
+ * You'll need to change the release codename to get working links
+ * it does print based xml generation. Which is Bad.
+ * It's fugly
