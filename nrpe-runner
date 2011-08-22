@@ -64,20 +64,16 @@ wanted.each_pair do |name,command|
   output = %x{ #{command} }.chomp!
   ret = $?.to_i / 256 # magic number
 
-  if options['json']
-    details[name] = { 'command' => command, 'output' => output, 'returncode' => ret }
-    next
-  end
 
   if options['all']
-    puts "#{name} => #{output}"
+    details[name] = { 'command' => command, 'output' => output, 'returncode' => ret }
   elsif options['retcode']
     if options['retcode'].to_i == ret
-      puts "#{name} => #{output}"
+      details[name] = { 'command' => command, 'output' => output, 'returncode' => ret }
     end
   else # default to showing everything broken
     if ret != 0
-      puts "#{name} => #{output}"
+      details[name] = { 'command' => command, 'output' => output, 'returncode' => ret }
     end
   end
 
@@ -85,10 +81,15 @@ wanted.each_pair do |name,command|
   ran += 1
 end
 
-if options['summary']
-  puts "Ran #{ran} checks - OK #{statuses['0']}. WARN #{statuses['1']}, CRIT #{statuses['2']}, UNKNOWN #{statuses['3']}"
-end
-
 if options['json']
   puts details.to_json
+  exit
+end
+
+details.keys.each do |name|
+  puts "#{name} => #{details[name]['output']}"
+end
+
+if options['summary']
+  puts "Ran #{ran} checks - OK #{statuses['0']}. WARN #{statuses['1']}, CRIT #{statuses['2']}, UNKNOWN #{statuses['3']}"
 end
