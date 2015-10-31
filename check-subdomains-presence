@@ -1,0 +1,24 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Net::DNS;
+
+die "$0: please supply a subdomain to look for and one or more zones to look in\n"
+  unless @ARGV >= 2;
+
+my $domain = shift;
+my @zones  = @ARGV;
+
+my $res   = Net::DNS::Resolver->new;
+
+for my $zone ( @zones ) {
+  my $query = $res->query( "$domain.$zone", "A");
+
+  if ( $query ) {
+    foreach my $rr ( grep { $_->type eq 'A' } $query->answer ) {
+      print "Present - $domain.$zone\n";
+    }
+  } else {
+    warn "Absent - $domain.$zone - ", $res->errorstring, "\n";
+  }
+}

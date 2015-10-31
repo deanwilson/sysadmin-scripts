@@ -1,0 +1,29 @@
+#!/usr/bin/perl -w
+use strict;
+use warnings;
+use Net::DNS;
+
+# takes a single domain, retrieves the ns records for it and then
+# queries each server to ensure it can answer for that domain
+
+my $domain = shift;
+
+my $res   = Net::DNS::Resolver->new;
+my $query = $res->query( $domain, "NS");
+
+if ($query) {
+  foreach my $rr (grep { $_->type eq 'NS' } $query->answer) {
+    $res->nameservers( $rr->nsdname);
+
+    my $lookup = $res->query( $domain, "A");
+    if ($lookup) {
+      foreach my $record (grep { $_->type eq 'A' } $lookup->answer) {
+        print $domain, " ", $rr->nsdname, " ", $record->address, "\n";
+      }
+    } else {
+      warn "A record query for [$domain] against [", $rr->nsdname, "] failed: ", $res->errorstring, "\n";
+    }
+  }
+} else {
+  warn "NS record query for [$domain] failed : ", $res->errorstring, "\n";
+}
