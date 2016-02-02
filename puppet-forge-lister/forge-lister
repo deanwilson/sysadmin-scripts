@@ -1,0 +1,77 @@
+#!/usr/bin/ruby
+require 'colorize'
+require 'date'
+require 'optparse'
+require 'puppet_forge'
+
+options = {
+  agent: 'Puppetforge-ls/0.0.1',
+  threshold: 30
+}
+
+OptionParser.new do |opts|
+  opts.banner = <<-EOS
+
+  forge-lister is a simple command line tool that will fetch all
+  the modules for the given user and display their names, newest release
+  and the date that release was uploaded. The dates are colour coded
+  to show releases older than now - threshold in days.
+
+  The only required argument is username, which can be passed with
+  -u or as a bare argument.
+
+  Usage:
+    forge-lister username [options]
+    forge-lister -u username [options]
+
+    forge-lister -u deanwilson -t 120
+  EOS
+
+  opts.on('-a', '--agent AGENT',
+          'User agent string sent to puppetforge') { |a| options[:agent] = a }
+
+  opts.on('-u', '--user USER',
+          'puppetforge user to query.') { |user| options[:user] = user }
+
+  opts.on('-t', '--threshold THRESHOLD',
+          "in days. Defaults to #{options[:threshold]}") { |t| options[:threshold] = t.to_i }
+
+  opts.on_tail('-h', '--help', 'Show this message') do
+    puts opts
+    exit
+  end
+end.parse!
+
+if options[:user].nil?
+  if ARGV[0]
+    options[:user] = ARGV[0]
+  else
+    puts 'Please supply a puppetforge username'
+    exit 1
+  end
+end
+
+PuppetForge.user_agent = options[:agent]
+user = PuppetForge::V3::User.find(options[:user])
+
+if user.nil?
+  puts "Failed to fetch modules for user [#{options[:user]}]"
+  exit 2
+end
+
+user.modules.sort { |a, b| a.name <=> b.name }.each do |m|
+  release = m.current_release
+  release_date = Date.parse(release.created_at)
+
+  if DateTime.now - options[:threshold] > release_date
+    colour = :light_red
+  else
+    colour = :light_green
+  end
+
+  msg = []
+  msg << "#{m.name} #{release.version}"
+  msg << release_date.strftime('%Y-%m-%d').colorize(colour)
+
+  puts msg.join(' ')
+end
