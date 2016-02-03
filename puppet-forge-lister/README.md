@@ -1,6 +1,6 @@
 # forge-lister #
 
-## Introduction ## 
+## Introduction ##
 
 forge-lister is a simple command line tool that will fetch all
 the modules for the given user and display their names, newest release
@@ -15,12 +15,13 @@ The only required argument is `username`, which can be passed with
       forge-lister -u username [options]
 
       forge-lister -u deanwilson -t 120
-      -a, --agent AGENT                User agent string sent to puppetforge
-      -u, --user USER                  puppetforge user to query.
-      -t, --threshold THRESHOLD        in days. Defaults to 30
-      -h, --help                       Show this message
+      -a, --agent AGENT          User agent string sent to puppetforge
+      -u, --user USER            puppetforge user to query.
+      -s, --score SCORE          module score threshold we consider acceptable. Defaults to 4.0
+      -t, --threshold THRESHOLD  in days. Defaults to 30
+      -h, --help                 Show this message
 
-## Output ## 
+## Output ##
 
 An example run against my current modules looks like this (without colour) -
 
