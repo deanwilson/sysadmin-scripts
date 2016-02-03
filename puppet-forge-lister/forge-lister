@@ -21,7 +21,8 @@ end
 options = {
   agent: 'Puppetforge-ls/0.0.1',
   threshold: 30,
-  score_threshold: 4.0
+  score_threshold: 4.0,
+  links: false
 }
 
 OptionParser.new do |opts|
@@ -44,6 +45,10 @@ OptionParser.new do |opts|
 
   opts.on('-a', '--agent AGENT',
           'User agent string sent to puppetforge') { |a| options[:agent] = a }
+
+  opts.on('-l', '--links',
+          'add link to the module on puppetforge to the output',
+         ) { |l| options[:links] = l }
 
   opts.on('-u', '--user USER',
           'puppetforge user to query.') { |user| options[:user] = user }
@@ -102,7 +107,11 @@ user.modules.sort { |a, b| a.name <=> b.name }.each do |m|
   msg = []
   msg << "#{m.name} #{release.version}"
   msg << release_date.strftime('%Y-%m-%d').colorize(colour)
-  msg << " (#{score.to_s.colorize(score_colour)})"
+  msg << "(#{score.to_s.colorize(score_colour)})"
+
+  if options[:links]
+    msg << "https://forge.puppetlabs.com/#{options[:user]}/#{m.name}"
+  end
 
   puts msg.join(' ')
 end
