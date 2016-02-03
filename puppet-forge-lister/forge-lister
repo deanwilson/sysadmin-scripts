@@ -3,10 +3,25 @@ require 'colorize'
 require 'date'
 require 'optparse'
 require 'puppet_forge'
+require 'json'
+require 'typhoeus'
+
+# this is quite an optimistic script as it both uses
+# 3rd party sites and has very little in the way of error checking.
+
+def get_score(user, module_name)
+  url = "https://forgeapi.puppetlabs.com/private/validations/#{user}-#{module_name}"
+  response = Typhoeus.get(url).body
+
+  meta_data = JSON.parse response
+
+  meta_data[-1]['score'] / 20.0
+end
 
 options = {
   agent: 'Puppetforge-ls/0.0.1',
-  threshold: 30
+  threshold: 30,
+  score_threshold: 4.0
 }
 
 OptionParser.new do |opts|
@@ -33,6 +48,10 @@ OptionParser.new do |opts|
   opts.on('-u', '--user USER',
           'puppetforge user to query.') { |user| options[:user] = user }
 
+  opts.on('-s', '--score SCORE',
+          "module score threshold we consider acceptable. Defaults to #{options[:score_threshold]}"
+         ) { |s| options[:score_threshold] = s.to_f }
+
   opts.on('-t', '--threshold THRESHOLD',
           "in days. Defaults to #{options[:threshold]}") { |t| options[:threshold] = t.to_i }
 
@@ -41,6 +60,7 @@ OptionParser.new do |opts|
     exit
   end
 end.parse!
+
 
 if options[:user].nil?
   if ARGV[0]
@@ -51,6 +71,7 @@ if options[:user].nil?
   end
 end
 
+
 PuppetForge.user_agent = options[:agent]
 user = PuppetForge::V3::User.find(options[:user])
 
@@ -59,9 +80,11 @@ if user.nil?
   exit 2
 end
 
+
 user.modules.sort { |a, b| a.name <=> b.name }.each do |m|
-  release = m.current_release
+  release      = m.current_release
   release_date = Date.parse(release.created_at)
+  score        = get_score(options[:user], m.name)
 
   if DateTime.now - options[:threshold] > release_date
     colour = :light_red
@@ -69,9 +92,17 @@ user.modules.sort { |a, b| a.name <=> b.name }.each do |m|
     colour = :light_green
   end
 
+  if score < options[:score_threshold]
+    score_colour = :light_red
+  else
+    score_colour = :light_green
+  end
+
+
   msg = []
   msg << "#{m.name} #{release.version}"
   msg << release_date.strftime('%Y-%m-%d').colorize(colour)
+  msg << " (#{score.to_s.colorize(score_colour)})"
 
   puts msg.join(' ')
 end
