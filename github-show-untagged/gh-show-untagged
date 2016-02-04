@@ -1,0 +1,55 @@
+#!/usr/bin/ruby
+require 'github_api'
+require 'optparse'
+
+options = {}
+OptionParser.new do |opts|
+  opts.banner = <<-EOS
+
+  gh-show-untagged is a very simple command line tool that will query
+  each of the given users source repos and list those that do not
+  have any tags.
+
+  While the only required argument is 'username', which can be passed with
+  -u or as a bare argument, you should also set a GitHub Personal
+  access token in the GITHUB_TOKEN environment variable otherwise you'll
+  very quickly find your requests throttled by GitHub
+
+  Usage:
+    gh-show-untagged <username>
+    gh-show-untagged <-u username>
+
+  EOS
+
+  opts.on('-u', '--user USER',
+          'github user to query.') { |user| options[:user] = user || ARGV[0] }
+
+  opts.on_tail('-h', '--help', 'Show this message') do
+    puts opts
+    exit
+  end
+end.parse!
+
+if options[:user].nil?
+  if ARGV[0]
+    options[:user] = ARGV[0]
+  else
+    puts 'Please supply a github username'
+    exit 1
+  end
+end
+
+config = {
+  user: options[:user],
+  auto_pagination: true,
+  token: ENV['GITHUB_TOKEN']
+}
+
+github = Github.new oauth_token: config[:token]
+repos = github.repos.list(config).select { |r| !r.fork }.map(&:name)
+
+repos.each do |repo_name|
+  if github.repos.tags(config[:user], repo_name).empty?
+    puts "#{config[:user]}/#{repo_name} has never been tagged"
+  end
+end
