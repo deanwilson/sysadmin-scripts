@@ -1,0 +1,105 @@
+#!/usr/bin/ruby
+require 'github_api'
+require 'optparse'
+
+options = {
+  all: false,
+  header: true
+}
+
+OptionParser.new do |opts|
+  opts.banner = <<-EOS
+
+  gh-show-outstanding is a small command line tool that will query
+  each of the given users repos and list those that have either or both
+  an issue or pull request raised against them.
+  have any tags.
+
+  While the only required argument is username, which can be passed with
+  -u or as a bare argument, you should also set a GitHub Personal access
+  token in the GITHUB_TOKEN environment variable otherwise you'll very
+  quickly find your requests throttled by GitHub
+
+  Sample output:
+
+    Reponame                                Issues   PRs
+    puppet-lint-no_symbolic_file_modes-check     1     0
+    puppet-scripts                               2     6
+    yum-transaction-json                         0     1
+
+  Limitations:
+    Currently only works for a users own repos, not those from
+    an organisation.
+
+  Usage:
+
+  EOS
+
+  opts.on('-a', '--all',
+          'show all repos') { |all| options[:all] = all }
+
+  opts.on('-H', '--no-header',
+          'do not display the output header') { options[:header] = false }
+
+  opts.on('-u', '--user USER',
+          'github user to query.') { |user| options[:user] = user || ARGV[0] }
+
+  opts.on_tail('-h', '--help', 'Show this message') do
+    puts opts
+    exit
+  end
+end.parse!
+
+if options[:user].nil?
+  if ARGV[0]
+    options[:user] = ARGV[0]
+  else
+    puts 'Please supply a github username'
+    exit 1
+  end
+end
+
+config = {
+  user: options[:user],
+  auto_pagination: true,
+  token: ENV['GITHUB_TOKEN']
+}
+
+github = Github.new oauth_token: config[:token]
+repos = github.repos.list(config).select { |r| !r.fork }.map(&:name)
+
+details = {}
+repos.each do |repo_name|
+  details[repo_name] = {
+    issues: 0,
+    pull_requests: 0
+  }
+
+  issues = github.issues.list user: options[:user], repo: repo_name
+
+  issues.each do |issue|
+    if issue.key? 'pull_request'
+      details[repo_name][:pull_requests] += 1
+    else
+      details[repo_name][:issues] += 1
+    end
+  end
+end
+
+# by default we only show repos with issues or PRs.
+if !options[:all]
+  details.select! { |_, d| d[:issues] > 0 || d[:pull_requests] > 0 }
+end
+
+################################# Display code
+
+longest_repo = details.keys.max_by(&:length).length
+format = "%-#{longest_repo}s%6s%6s\n"
+
+if details.keys.count > 0 && options[:header]
+  printf(format, 'Reponame', 'Issues', 'PRs')
+end
+
+details.each do |repo, detail|
+  printf(format, repo, detail[:issues], detail[:pull_requests])
+end
