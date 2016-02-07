@@ -2,7 +2,7 @@
 
 `gh-show-outstanding` is a small command line tool that will query each
 of the given users repos and list those that have either or both an
-issue or pull request raised against them. have any tags.
+issue or pull request raised against them.
 
 While the only required argument is `username`, which can be passed with
 `-u` or as a bare argument, you should also set a GitHub Personal access
