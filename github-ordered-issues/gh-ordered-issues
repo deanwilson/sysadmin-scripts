@@ -1,0 +1,92 @@
+#!/usr/bin/ruby
+require 'github_api'
+require 'optparse'
+
+options = {}
+OptionParser.new do |opts|
+  opts.banner = <<-EOS
+
+  gh-ordered-issues is a small command line tool that will query
+  each of the given users repos and list all the open issues and pull
+  requests against them in chronological order, newest to oldest.
+
+  While the only required configuration is username, which can be passed
+  with -u, as a bare argument or set by the GITHUB_USER environment
+  variable, you should also set a GitHub Personal access token in the
+  GITHUB_TOKEN environment variable otherwise you'll very quickly find
+  your requests throttled by GitHub.
+
+  Sample output:
+
+    puppet-lint-no_symbolic_file_modes-check  Issue     2016-01-29 13:19:59
+    puppet-scripts                            PR        2015-11-03 09:25:47
+    puppet-scripts                            Issue     2015-06-19 14:53:51
+    puppet-scripts                            PR        2014-07-31 04:00:07
+    puppet-scripts                            Issue     2014-07-29 16:06:21
+    puppet-scripts                            PR        2014-03-12 10:27:16
+    puppet-scripts                            PR        2013-02-11 16:50:29
+    puppet-scripts                            PR        2012-10-02 14:48:55
+    yum-transaction-json                      PR        2012-06-14 21:11:22
+    puppet-scripts                            PR        2011-03-29 21:07:44
+
+  Limitations:
+    Currently only works for a users own repos, not those from
+    an organisation.
+
+  Usage:
+
+  EOS
+
+  opts.on('-u', '--user USER',
+          'github user to query.') { |user| options[:user] = user || ARGV[0] }
+
+  opts.on_tail('-h', '--help', 'Show this message') do
+    puts opts
+    exit
+  end
+end.parse!
+
+if options[:user].nil?
+  if ARGV[0]
+    options[:user] = ARGV[0]
+  elsif ENV['GITHUB_USER']
+    options[:user] = ENV['GITHUB_USER']
+  else
+    puts 'Please supply a github username'
+    exit 1
+  end
+end
+
+config = {
+  user: options[:user],
+  auto_pagination: true,
+  token: ENV['GITHUB_TOKEN']
+}
+
+github = Github.new oauth_token: config[:token]
+repos = github.repos.list(config).select { |r| !r.fork }.map(&:name)
+
+details = []
+repos.each do |repo_name|
+  issues = github.issues.list user: options[:user], repo: repo_name
+
+  issues.each do |issue|
+    issue_type = issue.key?('pull_request') ? 'PR' : 'Issue'
+
+    created_date = issue.created_at
+    created_date.tr!('T', ' ')
+    created_date.tr!('Z', '')
+
+    details << { repo: repo_name, type: issue_type, created_date: created_date }
+  end
+end
+
+longest_repo = details.collect { |h| h[:repo] }.max_by(&:length).length
+longest_repo += 2 # extra padding
+
+# longest repo name, issue type +2, length of issue.created_at
+format = "%-#{longest_repo}s%-7s%22s\n"
+
+details.sort_by { |h| h[:created_date] }.reverse_each do |detail|
+  printf(format, detail[:repo], detail[:type], detail[:created_date])
+end
