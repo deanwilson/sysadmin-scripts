@@ -2,7 +2,9 @@
 require 'github_api'
 require 'optparse'
 
-options = {}
+options = {
+  links: false
+}
 OptionParser.new do |opts|
   opts.banner = <<-EOS
 
@@ -36,6 +38,9 @@ OptionParser.new do |opts|
   Usage:
 
   EOS
+
+  opts.on('-l', '--links',
+          'show a link to each PR/Issue') { options[:links] = true }
 
   opts.on('-u', '--user USER',
           'github user to query.') { |user| options[:user] = user || ARGV[0] }
@@ -77,16 +82,26 @@ repos.each do |repo_name|
     created_date.tr!('T', ' ')
     created_date.tr!('Z', '')
 
-    details << { repo: repo_name, type: issue_type, created_date: created_date }
+    details << { repo: repo_name, type: issue_type,
+                 created_date: created_date, link: issue.html_url
+               }
   end
 end
 
 longest_repo = details.collect { |h| h[:repo] }.max_by(&:length).length
 longest_repo += 2 # extra padding
 
+longest_link = details.collect { |h| h[:link] }.max_by(&:length).length
+longest_link += 2 # extra padding
+
 # longest repo name, issue type +2, length of issue.created_at
-format = "%-#{longest_repo}s%-7s%22s\n"
+format = "%-#{longest_repo}s%-7s%24s"
 
 details.sort_by { |h| h[:created_date] }.reverse_each do |detail|
   printf(format, detail[:repo], detail[:type], detail[:created_date])
+
+  # optional outputs
+  printf("   %-#{longest_link}s", detail[:link]) if options[:links]
+
+  printf("\n")
 end
