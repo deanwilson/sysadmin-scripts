@@ -10,10 +10,11 @@ token in the `GITHUB_TOKEN` environment variable otherwise you'll very
 quickly find your requests throttled by GitHub
 
 Usage:
-  -a, --all                        show all repos
-  -H, --no-header                  do not display the output header
-  -u, --user USER                  github user to query.
-  -h, --help                       Show this message
+
+    -a, --all                        show all repos
+    -H, --no-header                  do not display the output header
+    -u, --user USER                  github user to query.
+    -h, --help                       Show this message
 
 
 Sample output:
