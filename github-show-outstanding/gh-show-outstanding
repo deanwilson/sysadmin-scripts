@@ -4,7 +4,8 @@ require 'optparse'
 
 options = {
   all: false,
-  header: true
+  header: true,
+  owner_type: :user
 }
 
 OptionParser.new do |opts|
@@ -40,6 +41,9 @@ OptionParser.new do |opts|
   opts.on('-H', '--no-header',
           'do not display the output header') { options[:header] = false }
 
+  opts.on('-o', '--org',
+          'treat provided username as an organisation') { options[:owner_type] = :org }
+
   opts.on('-u', '--user USER',
           'github user to query.') { |user| options[:user] = user || ARGV[0] }
 
@@ -59,10 +63,10 @@ if options[:user].nil?
 end
 
 config = {
-  user: options[:user],
   auto_pagination: true,
   token: ENV['GITHUB_TOKEN']
 }
+config[options[:owner_type]] = options[:user] # todo
 
 github = Github.new oauth_token: config[:token]
 repos = github.repos.list(config).select { |r| !r.fork }.map(&:name)
