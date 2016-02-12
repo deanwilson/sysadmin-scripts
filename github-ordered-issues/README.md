@@ -28,8 +28,12 @@ Limitations:
 
 Usage:
 
+    -l, --links                      show a link to each PR/Issue
     -u, --user USER                  github user to query.
     -h, --help                       Show this message
+
+If the `-l` option is specified then each line with have the issues URL
+included at the end of it for easy, quick, navigation.
 
 
 ## Installation ##
