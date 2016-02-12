@@ -28,7 +28,9 @@ Limitations:
 
 Usage:
 
+    -i, --issues                     limit results to issues
     -l, --links                      show a link to each PR/Issue
+    -p, --pr                         limit results to PRs
     -u, --user USER                  github user to query.
     -h, --help                       Show this message
 
