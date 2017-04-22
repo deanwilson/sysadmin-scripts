@@ -1,0 +1,34 @@
+#!/usr/bin/python
+from __future__ import print_function
+import fileinput
+
+
+def find_important(task_list):
+    """ Takes a list of tasks and returns the most important one """
+    important = task_list[0]
+
+    for task in task_list:
+        if task == important:
+            continue
+
+        prompt_s = "Is {} more important than {} ('y' for yes)? ".format(
+            task, important)
+        answer = raw_input(prompt_s)
+
+        if answer is "y":
+            important = task
+
+    return important
+
+
+tasks = [t.rstrip() for t in fileinput.input()]
+ordered_tasks = []
+
+while tasks:
+    top = find_important(tasks)
+    tasks.remove(top)
+
+    ordered_tasks.append(top)
+
+print("The most important task is: {}".format(ordered_tasks[0]))
+print("The final ordering is {}".format(ordered_tasks))
