@@ -25,3 +25,15 @@ things are the most important. Repeatedly.
     The final ordering is ['bottom', 'above bottom', 'middle', 'top']
 
 We end up with an ordered list of items and the first one to start on.
+
+## show-process-environment
+
+Show the environment of another process in a prettier way than `cat`ting
+`/proc/$pid/environ`. If no process id is provided it defaults to the current
+process.
+
+    show-process-environment 34234 | grep QT
+
+    QTDIR == /usr/lib64/qt-3.3
+    QTINC == /usr/lib64/qt-3.3/include
+    QTLIB == /usr/lib64/qt-3.3/lib
