@@ -1,0 +1,22 @@
+#!/usr/bin/python
+import sys
+
+# if we're not given a pid assume the current process
+process_id = sys.argv[1] if len(sys.argv) > 1 else 'self'
+environ_file = '/proc/{}/environ'.format(process_id)
+
+environment = {}
+
+with open(environ_file) as f:
+    for setting in f.read().split('\x00'):
+
+        if '=' in setting:
+            name, value = setting.split('=', 1)
+
+        environment[name] = value
+
+names = environment.keys()
+names.sort()
+
+for name in names:
+    print "{} == {}".format(name, environment[name])
