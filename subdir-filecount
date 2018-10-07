@@ -1,0 +1,16 @@
+#!/usr/bin/bash
+
+# Display the number of files in each subdirectory of
+# the given directory.
+
+if [ -n "$1" ];then
+  directory="$1"
+else
+  directory=$(pwd)
+fi
+
+for dir in $(find "$directory" -maxdepth 1 -type d)
+do
+  echo -n "$dir == "
+  find "$dir" -type f | wc -l
+done | sort -k 3 -nr
