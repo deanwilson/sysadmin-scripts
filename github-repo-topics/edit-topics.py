@@ -87,4 +87,13 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    for topic in args.topics:
+        if not valid_topic(topic):
+            print(f"[{topic}] is an invalid topic. "
+                   "Topics must start with a lowercase letter or number"
+                   " and be 35 characters or less")
+
+            exit(1)
+
+
     main(args)
