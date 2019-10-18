@@ -45,15 +45,18 @@ def main(args):
             if set(args.exclude).intersection(topics):
                 continue
 
-            org_repos[org][repo.name] = topics
+            org_repos[org][repo.name] = {}
+            org_repos[org][repo.name]["topics"] = topics
+            org_repos[org][repo.name]["url"] = repo.html_url
 
-    print("Github_Organisation, Repository_name, topics")
+    print("Github_Organisation, Repository_name, Repository_URL, topics")
     for org in org_repos:
         for repo in sorted(org_repos[org]):
-            topics = org_repos[org][repo]
+            url = org_repos[org][repo]["url"]
+            topics = org_repos[org][repo]["topics"]
             topics.sort()
 
-            print(f"""{org}, {repo}, {", ".join(topics)}""")
+            print(f"""{org}, {repo}, {url}, {", ".join(topics)}""")
 
 
 if __name__ == "__main__":
