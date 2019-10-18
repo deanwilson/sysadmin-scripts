@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Query GitHub for repos and their labels and generate CSV from the results."""
+"""Query GitHub for repos and their topics and generate CSV from the results."""
 import argparse
 import os
 import sys
@@ -43,18 +43,18 @@ def main(args):
             topics = repo.get_topics()
             org_repos[org][repo.name] = topics
 
-    print("Github_Organisation, Repository_name, labels")
+    print("Github_Organisation, Repository_name, topics")
     for org in org_repos:
         for repo in sorted(org_repos[org]):
-            labels = org_repos[org][repo]
-            labels.sort()
+            topics = org_repos[org][repo]
+            topics.sort()
 
-            print(f"""{org}, {repo}, {", ".join(labels)}""")
+            print(f"""{org}, {repo}, {", ".join(topics)}""")
 
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description="Query GitHub for repo labels")
+    parser = argparse.ArgumentParser(description="Query GitHub for repo topics")
 
     parser.add_argument(
         "--archived",
