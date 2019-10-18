@@ -34,3 +34,14 @@ metadata scheme. This example will skip any repos that have a topic of
 `function` or `terraform`
 
     ./get-topics.py -o deanwilson -e function terraform
+
+## edit-topics.py
+
+This small script allows you to specify one or more repositories, in the
+`orgname/reponame` format and set their labels to the values you provide.
+
+    ./edit-topics.py --topics ansible automated --repos deanwilson/ansible-plugins --verbose
+
+*WARNING* by default this script does not add to the existing topics, it
+completely replaces them. When running under verbose it does output the topics
+before they are overwritten which may allow you to remedy any mistakes.
