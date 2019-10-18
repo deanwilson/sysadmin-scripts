@@ -41,6 +41,10 @@ def main(args):
                 continue
 
             topics = repo.get_topics()
+
+            if set(args.exclude).intersection(topics):
+                continue
+
             org_repos[org][repo.name] = topics
 
     print("Github_Organisation, Repository_name, topics")
@@ -77,6 +81,14 @@ if __name__ == "__main__":
         type=int,
         default=3,
         help="Number of seconds to sleep between batches",
+    )
+
+    parser.add_argument(
+        "-e",
+        "--exclude",
+        nargs="+",
+        default=[],
+        help="Exclude any repos with topics matching the supplied values",
     )
 
     parser.add_argument(
