@@ -53,15 +53,28 @@ def main(args):
         combined_topics.sort()
         unique_topics = set(combined_topics)  # set to remove duplicates
 
-        repo.replace_topics(list(unique_topics))  # set to remove duplicates
+        if not args.test:
+            repo.replace_topics(list(unique_topics))
+            if args.verbose:
+                print(f""" << Repo: {org_repo} has topics {",".join(repo.get_topics())}""")
 
-        if args.verbose:
-            print(f""" << Repo: {org_repo} has topics {",".join(repo.get_topics())}""")
+
+        if args.test and args.verbose:
+            print(f""" << Repo: {org_repo} has topics {",".join(list(unique_topics))}""")
 
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Set GitHub Repo Tokens")
+
+    parser.add_argument(
+        "--test",
+        "--dryrun",
+        "--dry-run",
+        default=False,
+        action="store_true",
+        help="Don't commit the changes. Only show what would happen.",
+    )
 
     parser.add_argument(
         "--verbose",
@@ -94,6 +107,5 @@ if __name__ == "__main__":
                    " and be 35 characters or less")
 
             exit(1)
-
 
     main(args)
