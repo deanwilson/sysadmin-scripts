@@ -37,6 +37,9 @@ def main(args):
                 if count % args.size == 0:
                     time.sleep(args.delay)
 
+            if repo.archived and not args.archived:
+                continue
+
             topics = repo.get_topics()
             org_repos[org][repo.name] = topics
 
@@ -51,6 +54,13 @@ def main(args):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Query GitHub for repo labels")
+
+    parser.add_argument(
+        "--archived",
+        default=False,
+        action="store_true",
+        help="Include archived repos in the results. Defaults to false.",
+    )
 
     parser.add_argument(
         "--size",
