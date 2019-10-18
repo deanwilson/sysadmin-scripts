@@ -40,8 +40,14 @@ metadata scheme. This example will skip any repos that have a topic of
 This small script allows you to specify one or more repositories, in the
 `orgname/reponame` format and set their labels to the values you provide.
 
-    ./edit-topics.py --topics ansible automated --repos deanwilson/ansible-plugins --verbose
+    ./edit-topics.py --dry-run --topics ansible automated --repos deanwilson/ansible-plugins --verbose
+
+The `--dry-run` option specified in the command above will show the before and possible after
+state of running without actually making the change.
 
 *WARNING* by default this script does not add to the existing topics, it
-completely replaces them. When running under verbose it does output the topics
-before they are overwritten which may allow you to remedy any mistakes.
+completely replaces them. You can specify the `--preserve` flag to add
+your supplied values to the existing topics When running under verbose
+`edit-topics.py` outputs the topics before they are overwritten which
+may allow you to remedy any mistakes.
+
