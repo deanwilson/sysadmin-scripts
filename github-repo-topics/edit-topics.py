@@ -42,10 +42,13 @@ def main(args):
         repos = g.search_repositories(query=f"repo:{org_repo}")
         repo = repos[0]
 
-        combined_topics = repo.get_topics()
+        combined_topics = []
+        original_topics = repo.get_topics()
+        if args.preserve:
+            combined_topics = original_topics
 
         if args.verbose:
-            print(f""" >> Repo: {org_repo} has topics {",".join(combined_topics)}""")
+            print(f""" >> Repo: {org_repo} has topics {",".join(original_topics)}""")
 
         for topic in args.topics:
             combined_topics.append(topic)
@@ -66,6 +69,14 @@ def main(args):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Set GitHub Repo Tokens")
+
+    parser.add_argument(
+        "--preserve",
+        "--append",
+        default=False,
+        action="store_true",
+        help="Add any topics without removing any existing ones.",
+    )
 
     parser.add_argument(
         "--test",
