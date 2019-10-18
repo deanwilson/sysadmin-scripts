@@ -45,8 +45,9 @@ def main(args):
 
     print("Github_Organisation, Repository_name, labels")
     for org in org_repos:
-        for repo in org_repos[org]:
+        for repo in sorted(org_repos[org]):
             labels = org_repos[org][repo]
+            labels.sort()
 
             print(f"""{org}, {repo}, {", ".join(labels)}""")
 
