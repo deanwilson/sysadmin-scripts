@@ -23,6 +23,43 @@ def get_token():
     return os.environ["GITHUB_AUTH_TOKEN"]
 
 
+def generate_statistics(pull_requests):
+    """Iterate through a dict of PRs and generate statistics."""
+
+    # TODO early return if arg is empty
+
+    durations = []
+
+    merged_summary = {
+        "pull_requests": 0,
+        "longest": 0,
+        "shortest": 100000,
+    }
+
+    # TODO: pretty display names
+    # "longest": { "duration": 0, "display": "Longest duration (days)" }
+
+    for pull_request in pull_requests:
+        pr = pull_requests[pull_request]
+
+        merged_summary["pull_requests"] += 1
+
+        if pr["duration"] > merged_summary["longest"]:
+            merged_summary["longest"] = pr["duration"]
+
+        if pr["duration"] < merged_summary["shortest"]:
+            merged_summary["shortest"] = pr["duration"]
+
+        durations.append(pr["duration"])
+
+    merged_summary["75_percentile"] = numpy.percentile(durations, 75)
+    merged_summary["95_percentile"] = numpy.percentile(durations, 95)
+
+    merged_summary["median"] = statistics.median(durations)
+
+    return(merged_summary)
+
+
 def main(args):
     token = get_token()
 
@@ -62,45 +99,11 @@ def main(args):
         if pull_requests[key]["duration"] > args.minimum_days
     }
 
-    if len(merged_prs) > 0:
-        print("Merged Pull requests")
+    summary = generate_statistics(merged_prs)
 
-    merged_summary = {
-        "pull_requests": 0,
-        "longest": 0,
-        "shortest": 100000,
-        "durations": [],
-    }
-
-    for pull_request in merged_prs:
-        pr = merged_prs[pull_request]
-        # print(f"""PR#{pr["number"]} Days={pr["duration"]} Title={pr["title"]}""")
-
-        merged_summary["pull_requests"] += 1
-
-        if pr["duration"] > merged_summary["longest"]:
-            merged_summary["longest"] = pr["duration"]
-
-        if pr["duration"] < merged_summary["shortest"]:
-            merged_summary["shortest"] = pr["duration"]
-
-        merged_summary["durations"].append(pr["duration"])
-
-    if len(merged_prs) > 0:
-        print(f"Summary for {args.repo_name}\n==========")
-        for metric in ["pull_requests", "longest", "shortest"]:
-            print(f"{metric} == {merged_summary[metric]}")
-
-        print(
-            f"""Median duration == {statistics.median(merged_summary["durations"])}"""
-        )
-        print(
-            f"""75 percentile == {numpy.percentile(merged_summary["durations"], 75)}"""
-        )
-        print(
-            f"""95 percentile == {numpy.percentile(merged_summary["durations"], 95)}"""
-        )
-
+    print(f"Summary for {args.repo_name}\n==========")
+    for metric in summary:
+        print(f"""{metric} == {summary[metric]}""")
 
 if __name__ == "__main__":
 
