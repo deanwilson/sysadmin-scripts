@@ -2,6 +2,31 @@
 
 Show a short summary of the Pull Request statistics in a repository
 
+## Introduction
+
+Run the command against a repo
+
+    ./github-pr-timings.py gds-operations/puppet-graphite
+
+    Closed summary for ['gds-operations/puppet-graphite']
+    ==========
+    Total Pull Requests == 10
+    Longest time before closing == 535
+    Shortest time before closing == 2
+    75 Percentile of days before closing == 104.75
+    95 Percentile of days before closing == 352.30
+    Median days before closing == 94.5
+    
+    Merged summary for ['gds-operations/puppet-graphite']
+    ==========
+    Total Pull Requests == 10
+    Longest time before closing == 28
+    Shortest time before closing == 2
+    75 Percentile of days before closing == 10.00
+    95 Percentile of days before closing == 20.80
+    Median days before closing == 8.0
+
+
 ## Installing
 
  * Clone this repository
@@ -25,16 +50,6 @@ And then run the command, specifying the repository to query.
 
 The command will query all the pull requests related to that repository
 and display a short summary of some interesting statistics.
-
-
-    Summary for ['gds-operations/puppet-graphite']
-    ==========
-    pull_requests == 20
-    longest == 535
-    shortest == 2
-    Median duration == 20.0
-    75 percentile == 89.75
-    95 percentile == 149.3000000000003
 
 ## Notes
 
