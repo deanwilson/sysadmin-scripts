@@ -52,12 +52,32 @@ def generate_statistics(pull_requests):
 
         durations.append(pr["duration"])
 
-    merged_summary["75_percentile"] = numpy.percentile(durations, 75)
-    merged_summary["95_percentile"] = numpy.percentile(durations, 95)
+    merged_summary["75_percentile"] = "{:.2f}".format(numpy.percentile(durations, 75))
+    merged_summary["95_percentile"] = "{:.2f}".format(numpy.percentile(durations, 95))
 
     merged_summary["median"] = statistics.median(durations)
 
     return(merged_summary)
+
+
+def summarise(resolution_type, repo, prs):
+    """Display the summarised stats for the given PR type."""
+
+    if len(prs) < 1:
+        return ""
+
+    output = []
+    output.append("") # open with a blank line for readability
+
+    summary = generate_statistics(prs)
+
+    output.append(f"{resolution_type} summary for {repo}")
+    output.append("==========")
+
+    for metric in summary:
+        output.append(f"{metric} == {summary[metric]}")
+
+    return "\n".join(output)
 
 
 def main(args):
@@ -88,13 +108,14 @@ def main(args):
 
         pull_requests[closed_pr.number] = pr_details
 
-    merged_prs = {
     if args.verbose:
         print(f" == Working set of {len(pull_requests)} PRs")
 
+    # ignore any PRs resolved in under X days
+    interesting_prs = {
         key: value
         for (key, value) in pull_requests.items()
-        if pull_requests[key]["ending"] == "merged"
+        if pull_requests[key]["duration"] > args.minimum_days
     }
 
     if args.verbose:
@@ -102,15 +123,24 @@ def main(args):
 
     merged_prs = {
         key: value
-        for (key, value) in pull_requests.items()
-        if pull_requests[key]["duration"] > args.minimum_days
+        for (key, value) in interesting_prs.items()
+        if pull_requests[key]["ending"] == "merged"
     }
 
-    summary = generate_statistics(merged_prs)
+    closed_prs = {
+        key: value
+        for (key, value) in interesting_prs.items()
+        if pull_requests[key]["ending"] == "closed"
+    }
 
-    print(f"Summary for {args.repo_name}\n==========")
-    for metric in summary:
-        print(f"""{metric} == {summary[metric]}""")
+    closed = summarise("Closed", args.repo_name, closed_prs)
+    merged = summarise("Merged", args.repo_name, merged_prs)
+
+    if closed:
+        print(closed)
+
+    if merged:
+        print(merged)
 
 if __name__ == "__main__":
 
