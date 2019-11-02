@@ -25,39 +25,59 @@ def get_token():
 
 def generate_statistics(pull_requests):
     """Iterate through a dict of PRs and generate statistics."""
-
-    # TODO early return if arg is empty
-
     durations = []
 
     merged_summary = {
-        "pull_requests": 0,
-        "longest": 0,
-        "shortest": 100000,
+        "pull_requests": { "amount": 0, "display": "Total Pull Requests" },
+        "longest": { "amount": 0, "display": "Longest time before closing" },
+        "shortest": { "amount": 100000, "display": "Shortest time before closing" },
+        "75_percentile": { "amount": None, "display": "75 Percentile of days before closing" },
+        "95_percentile": { "amount": None, "display": "95 Percentile of days before closing" },
+        "median": { "amount": None, "display": "Median days before closing" },
     }
-
-    # TODO: pretty display names
-    # "longest": { "duration": 0, "display": "Longest duration (days)" }
 
     for pull_request in pull_requests:
         pr = pull_requests[pull_request]
 
-        merged_summary["pull_requests"] += 1
+        merged_summary["pull_requests"]["amount"] += 1
 
-        if pr["duration"] > merged_summary["longest"]:
-            merged_summary["longest"] = pr["duration"]
+        if pr["duration"] > merged_summary["longest"]["amount"]:
+            merged_summary["longest"]["amount"] = pr["duration"]
 
-        if pr["duration"] < merged_summary["shortest"]:
-            merged_summary["shortest"] = pr["duration"]
+        if pr["duration"] < merged_summary["shortest"]["amount"]:
+            merged_summary["shortest"]["amount"] = pr["duration"]
 
         durations.append(pr["duration"])
 
-    merged_summary["75_percentile"] = numpy.percentile(durations, 75)
-    merged_summary["95_percentile"] = numpy.percentile(durations, 95)
+    merged_summary["75_percentile"]["amount"] = "{:.2f}".format(numpy.percentile(durations, 75))
+    merged_summary["95_percentile"]["amount"] = "{:.2f}".format(numpy.percentile(durations, 95))
 
-    merged_summary["median"] = statistics.median(durations)
+    merged_summary["median"]["amount"] = statistics.median(durations)
 
     return(merged_summary)
+
+
+def summarise(resolution_type, repo, prs):
+    """Display the summarised stats for the given PR type."""
+
+    if len(prs) < 1:
+        return ""
+
+    output = []
+    output.append("") # open with a blank line for readability
+
+    summary = generate_statistics(prs)
+
+    output.append(f"{resolution_type} summary for {repo}")
+    output.append("==========")
+
+    for metric in summary:
+        amount = summary[metric]["amount"]
+        description = summary[metric]["display"]
+
+        output.append(f"{description} == {amount}")
+
+    return "\n".join(output)
 
 
 def main(args):
@@ -88,22 +108,39 @@ def main(args):
 
         pull_requests[closed_pr.number] = pr_details
 
-    merged_prs = {
-        key: value
-        for (key, value) in pull_requests.items()
-        if pull_requests[key]["ending"] == "merged"
-    }
-    merged_prs = {
+    if args.verbose:
+        print(f" == Working set of {len(pull_requests)} PRs")
+
+    # ignore any PRs resolved in under X days
+    interesting_prs = {
         key: value
         for (key, value) in pull_requests.items()
         if pull_requests[key]["duration"] > args.minimum_days
     }
 
-    summary = generate_statistics(merged_prs)
+    if args.verbose:
+        print(f" == {len(interesting_prs)} PRs resolved after {args.minimum_days} days")
 
-    print(f"Summary for {args.repo_name}\n==========")
-    for metric in summary:
-        print(f"""{metric} == {summary[metric]}""")
+    merged_prs = {
+        key: value
+        for (key, value) in interesting_prs.items()
+        if pull_requests[key]["ending"] == "merged"
+    }
+
+    closed_prs = {
+        key: value
+        for (key, value) in interesting_prs.items()
+        if pull_requests[key]["ending"] == "closed"
+    }
+
+    closed = summarise("Closed", args.repo_name, closed_prs)
+    merged = summarise("Merged", args.repo_name, merged_prs)
+
+    if closed:
+        print(closed)
+
+    if merged:
+        print(merged)
 
 if __name__ == "__main__":
 
@@ -129,13 +166,16 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
+        "--verbose",
+        default=False,
+        action='store_true',
+        help="Display additional information when running",
+    )
+
+    parser.add_argument(
         "repo_name", nargs=argparse.REMAINDER, help="GitHub repo name to query"
     )
 
     args = parser.parse_args()
-
-    # print(start_date)
-    # print(args.repo_name)
-    # sys.exit(1)
 
     main(args)
