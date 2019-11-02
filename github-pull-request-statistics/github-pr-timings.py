@@ -141,8 +141,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # print(start_date)
-    # print(args.repo_name)
-    # sys.exit(1)
-
     main(args)
