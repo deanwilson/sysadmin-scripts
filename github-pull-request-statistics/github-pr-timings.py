@@ -129,6 +129,13 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
+        "--verbose",
+        default=False,
+        action='store_true',
+        help="Display additional information when running",
+    )
+
+    parser.add_argument(
         "repo_name", nargs=argparse.REMAINDER, help="GitHub repo name to query"
     )
 
