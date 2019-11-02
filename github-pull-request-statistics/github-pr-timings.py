@@ -25,37 +25,34 @@ def get_token():
 
 def generate_statistics(pull_requests):
     """Iterate through a dict of PRs and generate statistics."""
-
-    # TODO early return if arg is empty
-
     durations = []
 
     merged_summary = {
-        "pull_requests": 0,
-        "longest": 0,
-        "shortest": 100000,
+        "pull_requests": { "amount": 0, "display": "Total Pull Requests" },
+        "longest": { "amount": 0, "display": "Longest time before closing" },
+        "shortest": { "amount": 100000, "display": "Shortest time before closing" },
+        "75_percentile": { "amount": None, "display": "75 Percentile of days before closing" },
+        "95_percentile": { "amount": None, "display": "95 Percentile of days before closing" },
+        "median": { "amount": None, "display": "Median days before closing" },
     }
-
-    # TODO: pretty display names
-    # "longest": { "duration": 0, "display": "Longest duration (days)" }
 
     for pull_request in pull_requests:
         pr = pull_requests[pull_request]
 
-        merged_summary["pull_requests"] += 1
+        merged_summary["pull_requests"]["amount"] += 1
 
-        if pr["duration"] > merged_summary["longest"]:
-            merged_summary["longest"] = pr["duration"]
+        if pr["duration"] > merged_summary["longest"]["amount"]:
+            merged_summary["longest"]["amount"] = pr["duration"]
 
-        if pr["duration"] < merged_summary["shortest"]:
-            merged_summary["shortest"] = pr["duration"]
+        if pr["duration"] < merged_summary["shortest"]["amount"]:
+            merged_summary["shortest"]["amount"] = pr["duration"]
 
         durations.append(pr["duration"])
 
-    merged_summary["75_percentile"] = "{:.2f}".format(numpy.percentile(durations, 75))
-    merged_summary["95_percentile"] = "{:.2f}".format(numpy.percentile(durations, 95))
+    merged_summary["75_percentile"]["amount"] = "{:.2f}".format(numpy.percentile(durations, 75))
+    merged_summary["95_percentile"]["amount"] = "{:.2f}".format(numpy.percentile(durations, 95))
 
-    merged_summary["median"] = statistics.median(durations)
+    merged_summary["median"]["amount"] = statistics.median(durations)
 
     return(merged_summary)
 
@@ -75,7 +72,10 @@ def summarise(resolution_type, repo, prs):
     output.append("==========")
 
     for metric in summary:
-        output.append(f"{metric} == {summary[metric]}")
+        amount = summary[metric]["amount"]
+        description = summary[metric]["display"]
+
+        output.append(f"{description} == {amount}")
 
     return "\n".join(output)
 
