@@ -89,10 +89,17 @@ def main(args):
         pull_requests[closed_pr.number] = pr_details
 
     merged_prs = {
+    if args.verbose:
+        print(f" == Working set of {len(pull_requests)} PRs")
+
         key: value
         for (key, value) in pull_requests.items()
         if pull_requests[key]["ending"] == "merged"
     }
+
+    if args.verbose:
+        print(f" == {len(interesting_prs)} PRs resolved after {args.minimum_days} days")
+
     merged_prs = {
         key: value
         for (key, value) in pull_requests.items()
