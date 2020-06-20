@@ -1,0 +1,59 @@
+#!/usr/bin/ruby
+require 'github_api'
+require 'optparse'
+
+options = {}
+OptionParser.new do |opts|
+  opts.banner = <<-EOS
+    get-default-github-branch queries the repositories owned by the
+    given user or organisation and prints the repoitory name and the
+    name of the default branch.
+
+    Usage:
+      $ get-default-github-branch --user deanwilson
+      ...
+      alexa-skill-registered-domain default branch of master
+      alexa-skill-webstatuscode default branch of master
+      ...
+  EOS
+
+  opts.on('-a', '--archived',
+          'check archived repos.') { |v| options[:archived] = v }
+
+  opts.on('-u', '--user USER',
+          'github user to query.') { |user| options[:user] = user || ARGV[0] }
+
+  opts.on_tail('-h', '--help', 'Show this message') do
+    puts opts
+    exit
+  end
+end.parse!
+
+if options[:user].nil?
+  if ARGV[0]
+    options[:user] = ARGV[0]
+  else
+    puts 'Please supply a github username'
+    exit 1
+  end
+end
+
+config = {
+  user: options[:user],
+  auto_pagination: true,
+  token: ENV['GITHUB_TOKEN']
+}
+
+github = Github.new oauth_token: config[:token]
+
+# don't check forks as we don't control their branch names
+repos = github.repos.list(config).select { |r| !r.fork }
+
+# ignore archived repos by default.
+unless options[:archived]
+  repos = repos.select { |r| !r.archived }
+end
+
+repos.each do |repo|
+  puts "#{repo['name']} default branch of #{repo['default_branch']}"
+end
