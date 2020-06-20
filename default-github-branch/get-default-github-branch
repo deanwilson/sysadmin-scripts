@@ -20,6 +20,9 @@ OptionParser.new do |opts|
   opts.on('-a', '--archived',
           'check archived repos.') { |v| options[:archived] = v }
 
+  opts.on('-s', '--summary',
+          'summerise the number of repos with each default branch.') { |v| options[:summary] = v }
+
   opts.on('-u', '--user USER',
           'github user to query.') { |user| options[:user] = user || ARGV[0] }
 
@@ -52,6 +55,21 @@ repos = github.repos.list(config).reject { |r| r.fork }
 # ignore archived repos by default.
 repos.reject! { |r| r.archived } unless options[:archived]
 
+repo_branches = Hash.new { |h,k| h[k] = [ ] }
 repos.each do |repo|
-  puts "#{repo['name']} default branch of #{repo['default_branch']}"
+  repo_branches[repo['default_branch']].push repo['name']
+end
+
+if options[:summary]
+  repo_branches.keys.sort.each do |default_branch|
+    total = repo_branches[default_branch].length
+    puts "#{default_branch} is used by #{total}"
+  end
+  exit 0
+end
+
+repo_branches.keys.each do |default_branch|
+  repo_branches[default_branch].each do |repo|
+   puts "#{repo} default branch of #{default_branch}"
+  end
 end
