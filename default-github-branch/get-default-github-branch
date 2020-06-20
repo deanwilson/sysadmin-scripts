@@ -4,7 +4,7 @@ require 'optparse'
 
 options = {}
 OptionParser.new do |opts|
-  opts.banner = <<-EOS
+  opts.banner = <<-ENDOFUSAGE
     get-default-github-branch queries the repositories owned by the
     given user or organisation and prints the repoitory name and the
     name of the default branch.
@@ -15,7 +15,7 @@ OptionParser.new do |opts|
       alexa-skill-registered-domain default branch of master
       alexa-skill-webstatuscode default branch of master
       ...
-  EOS
+  ENDOFUSAGE
 
   opts.on('-a', '--archived',
           'check archived repos.') { |v| options[:archived] = v }
@@ -47,12 +47,10 @@ config = {
 github = Github.new oauth_token: config[:token]
 
 # don't check forks as we don't control their branch names
-repos = github.repos.list(config).select { |r| !r.fork }
+repos = github.repos.list(config).reject { |r| r.fork }
 
 # ignore archived repos by default.
-unless options[:archived]
-  repos = repos.select { |r| !r.archived }
-end
+repos.reject! { |r| r.archived } unless options[:archived]
 
 repos.each do |repo|
   puts "#{repo['name']} default branch of #{repo['default_branch']}"
