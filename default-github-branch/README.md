@@ -12,9 +12,9 @@ branch name for each of them.
 Using this command is currently very manual:
 
     git clone https://github.com/deanwilson/sysadmin-scripts.git
-    cd default-github-branch
+    cd sysadmin-scripts/default-github-branch
 
-    bundle install
+    bundle install --path vendor/bundle
 
     # set GITHUB_TOKEN if you hit API rate limits
     bundle exec ruby get-default-github-branch --user deanwilson
