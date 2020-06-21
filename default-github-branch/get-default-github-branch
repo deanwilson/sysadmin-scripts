@@ -21,7 +21,7 @@ OptionParser.new do |opts|
           'check archived repos.') { |v| options[:archived] = v }
 
   opts.on('-s', '--summary',
-          'summerise the number of repos with each default branch.') { |v| options[:summary] = v }
+          'summarise the number of repos with each default branch.') { |v| options[:summary] = v }
 
   opts.on('-u', '--user USER',
           'github user to query.') { |user| options[:user] = user || ARGV[0] }
