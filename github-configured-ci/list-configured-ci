@@ -71,11 +71,36 @@ repos = github.repos.list(config).reject { |r| r.fork }
 # ignore archived repos by default.
 repos.reject! { |r| r.archived } unless options[:archived]
 
+# TODO - can you use regex in the `get` call? Doesn't appear so
 ci_configs = {
-  'Travis CI': '/.travis.yml',
-  'CircleCI':  '/.circleci/config.yml',
-  'Jenkins':   '/Jenkinsfile',
-  'GitHub Actions': '.github/workflows/',
+  'Travis CI': [
+    '.travis.yml',
+    '.travis.yaml',
+  ],
+  'CircleCI': [
+    '.circleci/config.yml',
+    '.circleci/config.yaml',
+  ],
+  'Jenkins': [ 'Jenkinsfile', ],
+  'GitHub Actions': [ '.github/workflows/', ],
+  'AWS CodeBuild': [
+    '.buildspec.yml',
+    '.buildspec.yaml',
+  ],
+  'GitLab CI': [
+    '.gitlab-ci.yml',
+    '.gitlab-ci.yaml',
+  ],
+  'DroneCI': [
+    '.drone.yml',
+    '.drone.yml',
+  ],
+  'Azure Devops': [
+    'azure-pipelines.yml',
+    'azure-pipelines.yaml',
+  ],
+  # Google cloud build uses the Dockerfile
+  # which creates too many false positives.
 }
 
 repo_ci = Hash.new
@@ -85,25 +110,29 @@ repos.each do |repo|
   puts " - checking #{repo_name}" if options[:debug]
   active_config = {}
 
-  ci_configs.each do |ci_system, ci_path|
-    puts "  * checking #{repo_name} == #{ci_system} == #{ci_path}" if options[:debug]
-    begin
-      config = github.repos.contents.get options[:user], repo_name, ci_path
-    rescue Github::Error::NotFound
-      puts "  * checking #{repo_name} == #{ci_system} == #{ci_path} == MISS" if options[:debug]
-      next # this exception means the file was not found so check the next
-    else
-      puts "  * checking #{repo_name} == #{ci_system} == #{ci_path} == HIT" if options[:debug]
+  ci_configs.each do |ci_system, ci_paths|
+    ci_paths.each do |ci_path|
+      puts "  * checking #{repo_name} == #{ci_system} == #{ci_path}" if options[:debug]
+      begin
+        config = github.repos.contents.get options[:user], repo_name, ci_path
+      rescue Github::Error::NotFound
+        puts "  * checking #{repo_name} == #{ci_system} == #{ci_path} == MISS" if options[:debug]
+        next # this exception means the file was not found so check the next
+      else
+        puts "  * checking #{repo_name} == #{ci_system} == #{ci_path} == HIT" if options[:debug]
 
-      active_config[ci_system] = true
+        active_config[ci_system] = true
 
-      # special case GH Actions as it's a directory of possible configs
-      if ci_system == 'GitHub Actions'
-        # only consider it active if there is one .yml or .yaml file
-        unless config.any? { |c| c.name.match(/.*.ya?ml/i) }
-          active_config[ci_system] = false
+        # special case GH Actions as it's a directory of possible configs
+        if ci_system == 'GitHub Actions'
+          # only consider it active if there is one .yml or .yaml file
+          unless config.any? { |c| c.name.match(/.*.ya?ml/i) }
+            active_config[ci_system] = false
+          end
         end
       end
+      # some providers have multiple files, skip to next provider when one matches
+      break if active_config[ci_system]
     end
   end
 
