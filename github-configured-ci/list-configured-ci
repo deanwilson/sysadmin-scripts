@@ -1,0 +1,127 @@
+#!/usr/bin/ruby
+require 'github_api'
+require 'optparse'
+
+options = {}
+OptionParser.new do |opts|
+  opts.banner = <<-ENDOFUSAGE
+    list-configured-ci queries the repositories owned by the
+    given user or organisation and searches for Continious Integration
+    service configuration and shows which ones each repo is configured
+    to use
+
+    Usage:
+      $ list-configured-ci --user deanwilson
+        ... snip ...
+        puppet-lint-yumrepo_gpgcheck_enabled-check
+          - Travis CI
+          - Jenkins
+        puppet-lint_duplicate_class_parameters-check
+          - Travis CI
+          - Jenkins
+        puppet-multitemplate
+          - CircleCI
+          - Jenkins
+        ... snip ...
+
+  ENDOFUSAGE
+
+  opts.on('-a', '--archived',
+          'check archived repos.') { |v| options[:archived] = v }
+
+  opts.on('-d', '--debug',
+          'show debug information.') { |v| options[:debug] = v }
+
+  opts.on('-n', '--no-config',
+          'show repos with no CI configured. Disabled by default.') { |v| options[:show_empty] = v }
+
+# TODO
+#  opts.on('-s', '--summary',
+#         'summarise.') { |v| options[:summary] = v }
+#
+  opts.on('-u', '--user USER',
+          'github user to query.') { |user| options[:user] = user || ARGV[0] }
+
+  opts.on_tail('-h', '--help', 'Show this message') do
+    puts opts
+    exit
+  end
+end.parse!
+
+if options[:user].nil?
+  if ARGV[0]
+    options[:user] = ARGV[0]
+  else
+    puts 'Please supply a github username'
+    exit 1
+  end
+end
+
+config = {
+  user: options[:user],
+  auto_pagination: true,
+  token: ENV['GITHUB_TOKEN']
+}
+
+github = Github.new oauth_token: config[:token]
+
+# don't check forks. We don't control their configurations
+repos = github.repos.list(config).reject { |r| r.fork }
+
+# ignore archived repos by default.
+repos.reject! { |r| r.archived } unless options[:archived]
+
+ci_configs = {
+  'Travis CI': '/.travis.yml',
+  'CircleCI':  '/.circleci/config.yml',
+  'Jenkins':   '/Jenkinsfile',
+  'GitHub Actions': '.github/workflows/',
+}
+
+repo_ci = Hash.new
+repos.each do |repo|
+  repo_name = repo['name']
+
+  puts " - checking #{repo_name}" if options[:debug]
+  active_config = {}
+
+  ci_configs.each do |ci_system, ci_path|
+    puts "  * checking #{repo_name} == #{ci_system} == #{ci_path}" if options[:debug]
+    begin
+      config = github.repos.contents.get options[:user], repo_name, ci_path
+    rescue Github::Error::NotFound
+      puts "  * checking #{repo_name} == #{ci_system} == #{ci_path} == MISS" if options[:debug]
+      next # this exception means the file was not found so check the next
+    else
+      puts "  * checking #{repo_name} == #{ci_system} == #{ci_path} == HIT" if options[:debug]
+
+      active_config[ci_system] = true
+
+      # special case GH Actions as it's a directory of possible configs
+      if ci_system == 'GitHub Actions'
+        # only consider it active if there is one .yml or .yaml file
+        unless config.any? { |c| c.name.match(/.*.ya?ml/i) }
+          active_config[ci_system] = false
+        end
+      end
+    end
+  end
+
+  repo_ci[repo_name] = active_config
+end
+
+repo_ci.keys.each do |repo_name|
+  # only print the name if we have CI config or show_empty is set
+  if repo_ci[repo_name].keys.any? || options[:show_empty]
+    puts "#{repo_name}"
+  end
+
+  if repo_ci[repo_name].keys.empty?
+    puts "  - no detected CI systems configured" if options[:show_empty]
+    next
+  end
+
+  repo_ci[repo_name].keys.each do |ci|
+    puts "  - #{ci}"
+  end
+end
