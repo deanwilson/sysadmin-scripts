@@ -2,7 +2,10 @@
 require 'github_api'
 require 'optparse'
 
-options = {}
+options = {
+  batch_delay: 3,
+}
+
 OptionParser.new do |opts|
   opts.banner = <<-ENDOFUSAGE
     list-configured-ci queries the repositories owned by the
@@ -28,6 +31,12 @@ OptionParser.new do |opts|
 
   opts.on('-a', '--archived',
           'check archived repos.') { |v| options[:archived] = v }
+
+  opts.on('--batch-delay DELAY', '--delay DELAY',
+          'number of seconds to sleep between batches') { |delay| options[:batch_delay] = delay.to_i }
+
+  opts.on('--size SIZE', '--batch-size=SIZE',
+          'split requests into groups of this size to avoid API limits') { |size| options[:batch_size] = size.to_i }
 
   opts.on('-d', '--debug',
           'show debug information.') { |v| options[:debug] = v }
@@ -103,8 +112,10 @@ ci_configs = {
   # which creates too many false positives.
 }
 
-repo_ci = Hash.new
+repo_ci = {}
+repo_count = 0
 repos.each do |repo|
+  repo_count += 1
   repo_name = repo['name']
 
   puts " - checking #{repo_name}" if options[:debug]
@@ -133,6 +144,13 @@ repos.each do |repo|
       end
       # some providers have multiple files, skip to next provider when one matches
       break if active_config[ci_system]
+    end
+  end
+
+  if options[:batch_size]
+    if repo_count % options[:batch_size] == 0
+      puts " == Batch complete - sleeping for #{options[:batch_delay]}" if options[:debug]
+      sleep options[:batch_delay]
     end
   end
 
