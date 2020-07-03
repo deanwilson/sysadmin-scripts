@@ -1,3 +1,4 @@
 source 'https://rubygems.org'
 
 gem 'github_api', '~> 0.18.2'
+gem 'rubocop', '~> 0.86.0', require: false
