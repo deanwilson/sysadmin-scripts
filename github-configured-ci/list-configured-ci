@@ -44,10 +44,10 @@ OptionParser.new do |opts|
   opts.on('-n', '--no-config',
           'show repos with no CI configured. Disabled by default.') { |v| options[:show_empty] = v }
 
-# TODO
-#  opts.on('-s', '--summary',
-#         'summarise.') { |v| options[:summary] = v }
-#
+  # TODO: Add a summary option for overviews
+  #  opts.on('-s', '--summary',
+  #         'summarise.') { |v| options[:summary] = v }
+  #
   opts.on('-u', '--user USER',
           'github user to query.') { |user| options[:user] = user || ARGV[0] }
 
@@ -69,7 +69,7 @@ end
 config = {
   user: options[:user],
   auto_pagination: true,
-  token: ENV['GITHUB_TOKEN']
+  token: ENV['GITHUB_TOKEN'],
 }
 
 github = Github.new oauth_token: config[:token]
@@ -90,8 +90,8 @@ ci_configs = {
     '.circleci/config.yml',
     '.circleci/config.yaml',
   ],
-  'Jenkins': [ 'Jenkinsfile', ],
-  'GitHub Actions': [ '.github/workflows/', ],
+  'Jenkins': ['Jenkinsfile'],
+  'GitHub Actions': ['.github/workflows/'],
   'AWS CodeBuild': [
     '.buildspec.yml',
     '.buildspec.yaml',
@@ -148,7 +148,7 @@ repos.each do |repo|
   end
 
   if options[:batch_size]
-    if repo_count % options[:batch_size] == 0
+    if (repo_count % options[:batch_size]).zero?
       puts " == Batch complete - sleeping for #{options[:batch_delay]}" if options[:debug]
       sleep options[:batch_delay]
     end
