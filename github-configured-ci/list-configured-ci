@@ -160,11 +160,11 @@ end
 repo_ci.keys.each do |repo_name|
   # only print the name if we have CI config or show_empty is set
   if repo_ci[repo_name].keys.any? || options[:show_empty]
-    puts "#{repo_name}"
+    puts repo_name
   end
 
   if repo_ci[repo_name].keys.empty?
-    puts "  - no detected CI systems configured" if options[:show_empty]
+    puts '  - no detected CI systems configured' if options[:show_empty]
     next
   end
 
