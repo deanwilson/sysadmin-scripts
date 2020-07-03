@@ -80,7 +80,7 @@ repos = github.repos.list(config).reject { |r| r.fork }
 # ignore archived repos by default.
 repos.reject! { |r| r.archived } unless options[:archived]
 
-# TODO - can you use regex in the `get` call? Doesn't appear so
+# TODO:  can you use regex in the `get` call? Doesn't appear so
 ci_configs = {
   'Travis CI': [
     '.travis.yml',
