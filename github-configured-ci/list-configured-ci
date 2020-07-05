@@ -4,6 +4,7 @@ require 'optparse'
 
 options = {
   batch_delay: 3,
+  repos: [],
 }
 
 OptionParser.new do |opts|
@@ -47,7 +48,10 @@ OptionParser.new do |opts|
   # TODO: Add a summary option for overviews
   #  opts.on('-s', '--summary',
   #         'summarise.') { |v| options[:summary] = v }
-  #
+  
+  opts.on('-r', '--repos REPOS', 'Repos to check - repo1,repo2') { |v|
+          options[:repos] = v.split(',') }
+
   opts.on('-u', '--user USER',
           'github user to query.') { |user| options[:user] = user || ARGV[0] }
 
@@ -74,11 +78,18 @@ config = {
 
 github = Github.new oauth_token: config[:token]
 
-# don't check forks. We don't control their configurations
-repos = github.repos.list(config).reject { |r| r.fork }
+repos = []
+# allow overriding using command line options
+if options[:repos].empty?
+  # don't check forks. We don't control their configurations
+  repos = github.repos.list(config).reject { |r| r.fork }
 
-# ignore archived repos by default.
-repos.reject! { |r| r.archived } unless options[:archived]
+  # ignore archived repos by default.
+  repos.reject! { |r| r.archived } unless options[:archived]
+else
+  # if the user is explicitly passing repos don't filter them
+  repos = options[:repos].map { |r| { 'name' => r }}
+end
 
 # TODO:  can you use regex in the `get` call? Doesn't appear so
 ci_configs = {
